@@ -62,12 +62,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func autoStartIfEnabled() {
         guard UserDefaults.standard.bool(forKey: "isProcessingEnabled") else { return }
-        do {
-            try appState.micProcessor.start()
-            let preset = UserDefaults.standard.string(forKey: "qualityPreset") ?? "balanced"
-            appState.micProcessor.applyQualityPreset(preset)
-        } catch {
-            print("Auto-start failed: \(error)")
+        
+        // Delay slightly to ensure audio system is ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            do {
+                try self.appState.micProcessor.start()
+                let preset = UserDefaults.standard.string(forKey: "qualityPreset") ?? "balanced"
+                self.appState.micProcessor.applyQualityPreset(preset)
+                print("Auto-start succeeded")
+            } catch {
+                print("Auto-start failed: \(error)")
+                // Reset the preference so it doesn't keep trying and failing
+                UserDefaults.standard.set(false, forKey: "isProcessingEnabled")
+            }
         }
     }
 

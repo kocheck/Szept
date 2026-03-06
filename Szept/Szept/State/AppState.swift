@@ -13,6 +13,7 @@ final class AppState {
     let micModeMonitor = MicModeMonitor()
     let frontmostAppMonitor = FrontmostAppMonitor()
     var micPermissionDenied: Bool = false
+    var lastError: String?
 
     var currentMode: SzeptMode {
         guard micProcessor.isRunning else { return .off }

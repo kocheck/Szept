@@ -10,6 +10,13 @@
 ## Current session
 All phases complete. 16/16 tests passing. Phase 5 added: full SettingsView (3-tab TabView: General/Audio/About), SMAppService launch-at-login, mic permission check + denied UI (MicPermissionDeniedCard), auto-start on launch from isProcessingEnabled preference, UserDefaults defaults registration, MicProcessor.loadPreferences + applyQualityPreset, persistence via onChange in ControlsSection, quality preset wired to isolation level, AudioMeter smooth animation.
 
+### Launch bug fix (kyle/enhancements)
+Fixed crash/failure when app auto-starts at launch before audio system is ready. Changes:
+- `AppDelegate.swift` — `autoStartIfEnabled()` now defers engine start by 0.5s via `asyncAfter`; resets `isProcessingEnabled` to false on failure to prevent retry loop
+- `MicProcessor.swift` — `start()` creates a fresh `AVAudioEngine` each time (changed from `let` to `var`); validates inputFormat before connecting; explicit format passed to `engine.connect`; tap removed before re-install; `stop()` disconnects nodes before detaching AU (prevents CoreAudio crash)
+- `AppState.swift` — added `lastError: String?` for surfacing engine errors to UI
+- `MenuView.swift` — added `ErrorBanner` view that displays `lastError` with dismiss button; `toggleEngine` sets/clears `lastError` on start failure
+
 ## Decisions made
 
 - `@Observable` + `@AppStorage` cannot coexist — both synthesize `_property` backing storage. `Preferences` stays as a plain `final class`; `@AppStorage` will be used directly in views in Phase 5.

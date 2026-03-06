@@ -26,7 +26,7 @@ final class MicProcessor {
     nonisolated(unsafe) private var tapIsolation: Float = 50
 
     // MARK: - AVAudioEngine
-    private let engine = AVAudioEngine()
+    private var engine = AVAudioEngine()
     private var isolationUnit: AVAudioUnitEffect?
     private let logger = Logger(subsystem: "dev.kocheck.Szept", category: "MicProcessor")
 
@@ -46,37 +46,65 @@ final class MicProcessor {
     func start() throws {
         guard !isRunning else { return }
 
+        // Always create a fresh engine to avoid state issues
+        // If there was a previous session, this ensures clean restart
+        engine = AVAudioEngine()
+        isolationUnit = nil
+
         let unit = AVAudioUnitEffect(audioComponentDescription: Self.isolationDescription)
         isolationUnit = unit
 
         engine.attach(unit)
-        engine.connect(engine.inputNode, to: unit, format: nil)
-        engine.connect(unit, to: engine.mainMixerNode, format: nil)
+        
+        // Get the input format before making connections
+        let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+        guard inputFormat.sampleRate > 0 else {
+            engine.detach(unit)
+            isolationUnit = nil
+            throw NSError(domain: "MicProcessor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid audio input format"])
+        }
+        
+        // Connect nodes with explicit format
+        let mixerNode = engine.mainMixerNode
+        engine.connect(engine.inputNode, to: unit, format: inputFormat)
+        engine.connect(unit, to: mixerNode, format: inputFormat)
 
         setIsolationParameter(tapIsolation)
+        
+        // Install tap BEFORE starting the engine
         installTap()
 
         engine.prepare()
         do {
             try engine.start()
         } catch {
+            mixerNode.removeTap(onBus: 0)
             engine.detach(unit)
             isolationUnit = nil
             throw error
         }
 
         isRunning = true
-        logger.info("MicProcessor started")
+        logger.info("MicProcessor started with format: \(inputFormat)")
     }
 
     func stop() {
         guard isRunning else { return }
+        
+        // Remove tap before stopping engine
         engine.mainMixerNode.removeTap(onBus: 0)
+        
+        // Stop the engine
         engine.stop()
+        
+        // Disconnect nodes BEFORE detaching (critical!)
         if let unit = isolationUnit {
+            engine.disconnectNodeInput(unit)
+            engine.disconnectNodeOutput(unit)
             engine.detach(unit)
             isolationUnit = nil
         }
+        
         isRunning = false
         outputLevel = 0
         logger.info("MicProcessor stopped")
@@ -117,7 +145,20 @@ final class MicProcessor {
 
     private func installTap() {
         let mixerNode = engine.mainMixerNode
+        
+        // Remove any existing tap first
+        mixerNode.removeTap(onBus: 0)
+        
         let format = mixerNode.outputFormat(forBus: 0)
+        
+        // Ensure we have a valid format
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            logger.error("Invalid mixer output format")
+            return
+        }
+        
+        logger.info("Installing tap with format: \(format)")
+        
         mixerNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             self?.processTap(buffer: buffer)
         }
