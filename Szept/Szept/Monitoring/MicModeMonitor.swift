@@ -13,7 +13,7 @@ final class MicModeMonitor {
 
     deinit {
         if let observer = activeModeObserver {
-            AVCaptureDevice.self.removeObserver(observer, forKeyPath: "activeMicrophoneMode")
+            AVCaptureDevice.self.removeObserver(observer, forKeyPath: #keyPath(AVCaptureDevice.activeMicrophoneMode))
         }
     }
 
@@ -23,12 +23,11 @@ final class MicModeMonitor {
         }
         AVCaptureDevice.self.addObserver(
             observer,
-            forKeyPath: "activeMicrophoneMode",
+            forKeyPath: #keyPath(AVCaptureDevice.activeMicrophoneMode),
             options: [.initial, .new],
             context: nil
         )
         activeModeObserver = observer
-        updateState()
     }
 
     private func updateState() {
