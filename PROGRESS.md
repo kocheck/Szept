@@ -3,12 +3,12 @@
 ## Phases
 - [x] Phase 1: Project scaffold and menu bar shell
 - [x] Phase 2: Audio processing engine
-- [ ] Phase 3: Monitoring services
-- [ ] Phase 4: Primary UI
+- [x] Phase 3: Monitoring services
+- [x] Phase 4: Primary UI
 - [ ] Phase 5: Settings, persistence, and polish
 
 ## Current session
-Phase 1 and Phase 2 complete. 12/12 DSP tests passing. App builds and runs.
+Phases 1–4 complete. 16/16 tests passing. App builds and runs with full primary UI and monitoring services. Phase 3 added BundleIdentifiers, FrontmostAppMonitor, and MicModeMonitor (KVO). Phase 4 implemented all SwiftUI sub-views (StatusCard, AudioMeter, ControlsSection, AppWarningBanner, MenuView), and AppDelegate dynamic sizing with reactive menu bar icon via withObservationTracking.
 
 ## Decisions made
 
@@ -18,6 +18,9 @@ Phase 1 and Phase 2 complete. 12/12 DSP tests passing. App builds and runs.
 - AUSoundIsolation auto-adjust deadband is applied in RMS space (0.02 = ±20% of 0.1 target), not as a raw isolation-percentage deadband.
 - `runAutoAdjust` only dispatches to main thread when isolation actually changes to avoid unnecessary main-thread pressure on every audio callback.
 - `start()` includes cleanup path: if `engine.start()` throws, the AU is detached and `isolationUnit` is nilled before rethrowing.
+- MicModeMonitor uses a private NSObject trampoline (MicModeObserver) for class-level KVO on AVCaptureDevice — @Observable classes cannot subclass NSObject.
+- AppDelegate uses withObservationTracking recursive loop to reactively update menu bar icon from @Observable AppState.
+- NSHostingView.sizingOptions = [.preferredContentSize] used for auto-height menu — replaces hardcoded 80pt.
 
 ## Known issues
 
@@ -50,3 +53,17 @@ Phase 1 and Phase 2 complete. 12/12 DSP tests passing. App builds and runs.
 - `Szept/Szept/Audio/MicProcessor.swift` — implemented: full AVAudioEngine + AUSoundIsolation chain
 - `Szept/Szept/UI/MenuView.swift` — updated: Start/Stop engine toggle
 - `Szept/SzeptTests/SzeptTests.swift` — implemented: 12 DSP tests (all passing)
+
+### Phase 3
+- `Szept/Szept/Monitoring/BundleIdentifiers.swift` — implemented: known Chromium/Electron bundle ID lists with isChromiumBrowser/isElectronApp helpers
+- `Szept/Szept/Monitoring/FrontmostAppMonitor.swift` — implemented: NSWorkspace active app observer, publishes incompatible app warnings to AppState
+- `Szept/Szept/Monitoring/MicModeMonitor.swift` — implemented: KVO on AVCaptureDevice.activeMicrophoneMode via private NSObject trampoline (MicModeObserver)
+- `Szept/SzeptTests/SzeptTests.swift` — added: 4 BundleIdentifiers tests (chromium, electron, unknown, voiceIsolation coverage)
+
+### Phase 4
+- `Szept/Szept/UI/StatusCard.swift` — implemented: colored mode indicator dot + mode name label
+- `Szept/Szept/UI/AudioMeter.swift` — implemented: gradient level bar with EquatableView throttling
+- `Szept/Szept/UI/ControlsSection.swift` — implemented: gain slider, auto-adjust toggle, isolation quality picker
+- `Szept/Szept/UI/AppWarningBanner.swift` — implemented: orange styled banner with dynamic reason text
+- `Szept/Szept/UI/MenuView.swift` — rewritten: full composition of all sub-views
+- `Szept/Szept/App/AppDelegate.swift` — updated: dynamic NSHostingView sizing (sizingOptions = [.preferredContentSize]) + withObservationTracking reactive icon loop
