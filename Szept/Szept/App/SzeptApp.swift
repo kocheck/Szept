@@ -1,17 +1,13 @@
-//
-//  SzeptApp.swift
-//  Szept
-//
-//  Created by Kyle on 3/5/26.
-//
-
 import SwiftUI
 
 @main
 struct SzeptApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        Settings {
+            SettingsView()
+                .environment(appDelegate.appState)
         }
     }
 }

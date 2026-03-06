@@ -1,24 +1,33 @@
-//
-//  ContentView.swift
-//  Szept
-//
-//  Created by Kyle on 3/5/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+struct MenuView: View {
+    @Environment(AppState.self) var appState
 
-#Preview {
-    ContentView()
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerSection
+            Divider()
+            footerSection
+        }
+        .frame(width: 320)
+    }
+
+    private var headerSection: some View {
+        HStack {
+            Text("Szept")
+                .font(.headline)
+            Spacer()
+            Text(appState.currentMode.rawValue)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+    }
+
+    private var footerSection: some View {
+        Button("Quit Szept") {
+            NSApp.terminate(nil)
+        }
+        .padding(12)
+    }
 }
