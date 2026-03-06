@@ -5,10 +5,10 @@
 - [x] Phase 2: Audio processing engine
 - [x] Phase 3: Monitoring services
 - [x] Phase 4: Primary UI
-- [ ] Phase 5: Settings, persistence, and polish
+- [x] Phase 5: Settings, persistence, and polish
 
 ## Current session
-Phases 1–4 complete. 16/16 tests passing. App builds and runs with full primary UI and monitoring services. Phase 3 added BundleIdentifiers, FrontmostAppMonitor, and MicModeMonitor (KVO). Phase 4 implemented all SwiftUI sub-views (StatusCard, AudioMeter, ControlsSection, AppWarningBanner, MenuView), and AppDelegate dynamic sizing with reactive menu bar icon via withObservationTracking.
+All phases complete. 16/16 tests passing. Phase 5 added: full SettingsView (3-tab TabView: General/Audio/About), SMAppService launch-at-login, mic permission check + denied UI (MicPermissionDeniedCard), auto-start on launch from isProcessingEnabled preference, UserDefaults defaults registration, MicProcessor.loadPreferences + applyQualityPreset, persistence via onChange in ControlsSection, quality preset wired to isolation level, AudioMeter smooth animation.
 
 ## Decisions made
 
@@ -21,6 +21,15 @@ Phases 1–4 complete. 16/16 tests passing. App builds and runs with full primar
 - MicModeMonitor uses a private NSObject trampoline (MicModeObserver) for class-level KVO on AVCaptureDevice — @Observable classes cannot subclass NSObject.
 - AppDelegate uses withObservationTracking recursive loop to reactively update menu bar icon from @Observable AppState.
 - NSHostingView.sizingOptions = [.preferredContentSize] used for auto-height menu — replaces hardcoded 80pt.
+
+### Phase 5
+- `Szept/Szept/State/AppState.swift` — added: `micPermissionDenied: Bool`
+- `Szept/Szept/Audio/MicProcessor.swift` — added: `loadPreferences(gainDB:autoAdjust:)`, `applyQualityPreset(_:)`
+- `Szept/Szept/App/AppDelegate.swift` — updated: `registerDefaults()`, `loadPreferencesIntoProcessor()`, `checkMicPermission()`, `autoStartIfEnabled()` with quality preset on start
+- `Szept/Szept/UI/ControlsSection.swift` — updated: persistence via `onChange` for gain + autoAdjust + qualityPreset; qualityPreset change calls `applyQualityPreset`
+- `Szept/Szept/UI/MenuView.swift` — updated: `MicPermissionDeniedCard` (permission denied state with Privacy Settings button), `toggleEngine` saves `isProcessingEnabled`
+- `Szept/Szept/UI/AudioMeter.swift` — updated: `.animation(.easeOut(duration: 0.1))` on level bar
+- `Szept/Szept/UI/SettingsView.swift` — implemented: TabView with GeneralTab (SMAppService launch-at-login), AudioTab (@AppStorage gain/autoAdjust/qualityPreset), AboutTab (version + description)
 
 ## Known issues
 

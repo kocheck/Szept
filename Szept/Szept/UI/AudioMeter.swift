@@ -23,6 +23,7 @@ private struct AudioMeterBar: View, Equatable {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(meterGradient)
                     .frame(width: geometry.size.width * CGFloat(min(level, 1.0)))
+                    .animation(.easeOut(duration: 0.1), value: level)
             }
         }
         .frame(height: 8)

@@ -18,10 +18,14 @@ struct MenuView: View {
 
     private var statusSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            StatusCard(
-                mode: appState.currentMode,
-                description: appState.statusDescription
-            )
+            if appState.micPermissionDenied {
+                MicPermissionDeniedCard()
+            } else {
+                StatusCard(
+                    mode: appState.currentMode,
+                    description: appState.statusDescription
+                )
+            }
             if appState.shouldShowAppWarning,
                let reason = appState.frontmostAppMonitor.incompatibilityReason {
                 AppWarningBanner(reason: reason)
@@ -65,12 +69,35 @@ struct MenuView: View {
     private func toggleEngine() {
         if appState.micProcessor.isRunning {
             appState.micProcessor.stop()
+            UserDefaults.standard.set(false, forKey: "isProcessingEnabled")
         } else {
             do {
                 try appState.micProcessor.start()
+                UserDefaults.standard.set(true, forKey: "isProcessingEnabled")
             } catch {
                 print("Engine start failed: \(error)")
             }
         }
+    }
+}
+
+private struct MicPermissionDeniedCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Microphone access denied")
+                .font(.subheadline.weight(.semibold))
+            Text("Szept needs microphone access to process audio.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Open Privacy Settings") {
+                let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
+                NSWorkspace.shared.open(url)
+            }
+            .buttonStyle(.borderless)
+            .font(.caption)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 10))
     }
 }

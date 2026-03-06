@@ -82,6 +82,23 @@ final class MicProcessor {
         logger.info("MicProcessor stopped")
     }
 
+    // MARK: - Preference loading (call before start())
+
+    func loadPreferences(gainDB: Float, autoAdjust: Bool) {
+        makeupGainDB = gainDB
+        self.autoAdjust = autoAdjust
+    }
+
+    func applyQualityPreset(_ preset: String) {
+        let initialIsolation: Float
+        switch preset {
+        case "light":      initialIsolation = 30
+        case "aggressive": initialIsolation = 70
+        default:           initialIsolation = 50
+        }
+        setIsolationLevel(initialIsolation)
+    }
+
     // MARK: - Parameter control (main thread)
 
     func setIsolationLevel(_ percent: Float) {

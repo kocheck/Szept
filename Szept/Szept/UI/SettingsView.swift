@@ -1,8 +1,106 @@
 import SwiftUI
+import ServiceManagement
 
 struct SettingsView: View {
     var body: some View {
-        Text("Settings")
-            .frame(width: 450, height: 300)
+        TabView {
+            GeneralTab()
+                .tabItem { Label("General", systemImage: "gear") }
+            AudioTab()
+                .tabItem { Label("Audio", systemImage: "waveform") }
+            AboutTab()
+                .tabItem { Label("About", systemImage: "info.circle") }
+        }
+        .frame(width: 450, height: 300)
+    }
+}
+
+private struct GeneralTab: View {
+    @AppStorage("launchAtLogin") private var launchAtLogin: Bool = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, enabled in
+                        setLaunchAtLogin(enabled)
+                    }
+            }
+            Section {
+                Text("Szept runs silently in the menu bar and improves microphone audio locally using Apple's Neural Engine. Audio never leaves your device.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            print("SMAppService error: \(error)")
+        }
+    }
+}
+
+private struct AudioTab: View {
+    @AppStorage("makeupGainDB") private var makeupGainDB: Double = 6.0
+    @AppStorage("autoAdjust") private var autoAdjust: Bool = true
+    @AppStorage("qualityPreset") private var qualityPreset: String = "balanced"
+
+    var body: some View {
+        Form {
+            Section("Voice Boost") {
+                LabeledContent("Gain: +\(Int(makeupGainDB)) dB") {
+                    Slider(value: $makeupGainDB, in: 0...18, step: 1)
+                }
+            }
+            Section("Isolation") {
+                Toggle("Auto-adjust isolation level", isOn: $autoAdjust)
+                LabeledContent("Quality preset") {
+                    Picker("Quality preset", selection: $qualityPreset) {
+                        Text("Light").tag("light")
+                        Text("Balanced").tag("balanced")
+                        Text("Aggressive").tag("aggressive")
+                    }
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct AboutTab: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+            Text("Szept")
+                .font(.title.weight(.semibold))
+            Text("Version \(appVersion)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Local microphone enhancement using Apple's Neural Engine.\nZero network access. Runs entirely on-device.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 300)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 }
