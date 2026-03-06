@@ -26,6 +26,11 @@ struct MenuView: View {
                     description: appState.statusDescription
                 )
             }
+            if let errorMessage = appState.lastError {
+                ErrorBanner(message: errorMessage) {
+                    appState.lastError = nil
+                }
+            }
             if appState.shouldShowAppWarning,
                let reason = appState.frontmostAppMonitor.incompatibilityReason {
                 AppWarningBanner(reason: reason)
@@ -69,12 +74,15 @@ struct MenuView: View {
     private func toggleEngine() {
         if appState.micProcessor.isRunning {
             appState.micProcessor.stop()
+            appState.lastError = nil
             UserDefaults.standard.set(false, forKey: "isProcessingEnabled")
         } else {
             do {
                 try appState.micProcessor.start()
+                appState.lastError = nil
                 UserDefaults.standard.set(true, forKey: "isProcessingEnabled")
             } catch {
+                appState.lastError = "Failed to start: \(error.localizedDescription)"
                 print("Engine start failed: \(error)")
             }
         }
@@ -101,3 +109,26 @@ private struct MicPermissionDeniedCard: View {
         .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 10))
     }
 }
+private struct ErrorBanner: View {
+    let message: String
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.primary)
+            Spacer()
+            Button(action: onDismiss) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+        .background(.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
