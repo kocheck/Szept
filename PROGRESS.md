@@ -26,7 +26,6 @@ Phases 1–4 complete. 16/16 tests passing. App builds and runs with full primar
 
 - AUSoundIsolation is undocumented; may not load on Intel Macs or macOS < 13. App will still build and run — audio passes through with only gain + limiting applied.
 - `tapIsolation` has concurrent writes from main thread (`setIsolationLevel`) and audio thread (`runAutoAdjust`). `nonisolated(unsafe)` suppresses the Swift concurrency check; Float writes are atomic on ARM in practice.
-- NSHostingView frame height is hardcoded at 80pt (placeholder). Will need dynamic sizing in Phase 4 when the full MenuView content is added.
 
 ## Files modified this session
 
