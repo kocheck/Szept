@@ -5,44 +5,61 @@ struct MenuView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            headerSection
-            Divider()
-            engineToggleSection
-            Divider()
+            statusSection
+            meterSection
+            Divider().padding(.horizontal, 12)
+            ControlsSection()
+            Divider().padding(.horizontal, 12)
             footerSection
         }
         .frame(width: 320)
+        .padding(.vertical, 8)
     }
 
-    private var headerSection: some View {
-        HStack {
-            Text("Szept")
-                .font(.headline)
-            Spacer()
-            Text(appState.currentMode.rawValue)
+    private var statusSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            StatusCard(
+                mode: appState.currentMode,
+                description: appState.statusDescription
+            )
+            if appState.shouldShowAppWarning,
+               let reason = appState.frontmostAppMonitor.incompatibilityReason {
+                AppWarningBanner(reason: reason)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+    }
+
+    private var meterSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Output level")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            AudioMeter(level: appState.micProcessor.outputLevel)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
-    private var engineToggleSection: some View {
+    private var footerSection: some View {
         HStack {
-            Text(appState.micProcessor.isRunning ? "Processing: ON" : "Processing: OFF")
-                .font(.subheadline)
+            Button("Open Mic Settings") {
+                appState.micModeMonitor.openMicModePicker()
+            }
+            .buttonStyle(.borderless)
             Spacer()
             Button(appState.micProcessor.isRunning ? "Stop" : "Start") {
                 toggleEngine()
             }
+            .buttonStyle(.borderless)
+            Button("Quit") {
+                NSApp.terminate(nil)
+            }
+            .buttonStyle(.borderless)
         }
-        .padding(12)
-    }
-
-    private var footerSection: some View {
-        Button("Quit Szept") {
-            NSApp.terminate(nil)
-        }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private func toggleEngine() {
