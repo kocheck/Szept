@@ -7,6 +7,8 @@ struct MenuView: View {
         VStack(alignment: .leading, spacing: 0) {
             headerSection
             Divider()
+            engineToggleSection
+            Divider()
             footerSection
         }
         .frame(width: 320)
@@ -24,10 +26,34 @@ struct MenuView: View {
         .padding(12)
     }
 
+    private var engineToggleSection: some View {
+        HStack {
+            Text(appState.micProcessor.isRunning ? "Processing: ON" : "Processing: OFF")
+                .font(.subheadline)
+            Spacer()
+            Button(appState.micProcessor.isRunning ? "Stop" : "Start") {
+                toggleEngine()
+            }
+        }
+        .padding(12)
+    }
+
     private var footerSection: some View {
         Button("Quit Szept") {
             NSApp.terminate(nil)
         }
         .padding(12)
+    }
+
+    private func toggleEngine() {
+        if appState.micProcessor.isRunning {
+            appState.micProcessor.stop()
+        } else {
+            do {
+                try appState.micProcessor.start()
+            } catch {
+                print("Engine start failed: \(error)")
+            }
+        }
     }
 }
