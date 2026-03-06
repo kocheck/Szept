@@ -88,4 +88,46 @@ struct DSPTests {
     @Test func negativeSixDBIsApproximatelyHalf() {
         #expect(abs(DSP.dbToLinear(-6) - 0.5) < 0.01)
     }
+
+    // MARK: - BundleIdentifiers Tests
+
+    @Test func chromiumBrowsersDetected() {
+        let known = [
+            "com.google.Chrome",
+            "com.microsoft.edgemac",
+            "com.brave.Browser",
+            "company.thebrowser.Browser",
+            "com.operasoftware.Opera",
+            "com.vivaldi.Vivaldi"
+        ]
+        for id in known {
+            #expect(BundleIdentifiers.isChromiumBrowser(id), "\(id) should be Chromium")
+        }
+    }
+
+    @Test func electronAppsDetected() {
+        let known = [
+            "com.tinyspeck.slackmacgap",
+            "com.hnc.Discord",
+            "com.microsoft.teams2"
+        ]
+        for id in known {
+            #expect(BundleIdentifiers.isElectronApp(id), "\(id) should be Electron")
+        }
+    }
+
+    @Test func unknownBundleIDsReturnFalse() {
+        #expect(!BundleIdentifiers.isChromiumBrowser("com.apple.safari"))
+        #expect(!BundleIdentifiers.isElectronApp("com.apple.mail"))
+        #expect(!BundleIdentifiers.isChromiumBrowser(""))
+    }
+
+    @Test func voiceIsolationIncompatibleCoversAll() {
+        for id in BundleIdentifiers.chromiumBrowsers {
+            #expect(BundleIdentifiers.isVoiceIsolationIncompatible(id))
+        }
+        for id in BundleIdentifiers.electronApps {
+            #expect(BundleIdentifiers.isVoiceIsolationIncompatible(id))
+        }
+    }
 }
