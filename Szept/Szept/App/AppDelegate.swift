@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Observation
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     let appState = AppState()
@@ -7,6 +8,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
+        observeMode()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -22,10 +24,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = NSHostingView(
             rootView: MenuView().environment(appState)
         )
-        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 80)
+        hostingView.sizingOptions = [.preferredContentSize]
         menuItem.view = hostingView
         menu.addItem(menuItem)
         statusItem.menu = menu
+    }
+
+    private func observeMode() {
+        withObservationTracking {
+            _ = appState.currentMode
+        } onChange: { [weak self] in
+            DispatchQueue.main.async {
+                self?.updateStatusItemIcon()
+                self?.observeMode()
+            }
+        }
     }
 
     func updateStatusItemIcon() {
