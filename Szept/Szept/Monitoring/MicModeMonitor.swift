@@ -1,8 +1,61 @@
 import Foundation
+import AVFoundation
 
 @Observable
 final class MicModeMonitor {
     var isVoiceIsolationActive: Bool = false
 
-    func openMicModePicker() {}
+    private var activeModeObserver: NSObject?
+
+    init() {
+        startObserving()
+    }
+
+    deinit {
+        if let observer = activeModeObserver {
+            AVCaptureDevice.self.removeObserver(observer, forKeyPath: "activeMicrophoneMode")
+        }
+    }
+
+    private func startObserving() {
+        let observer = MicModeObserver { [weak self] in
+            self?.updateState()
+        }
+        AVCaptureDevice.self.addObserver(
+            observer,
+            forKeyPath: "activeMicrophoneMode",
+            options: [.initial, .new],
+            context: nil
+        )
+        activeModeObserver = observer
+        updateState()
+    }
+
+    private func updateState() {
+        let active = AVCaptureDevice.activeMicrophoneMode == .voiceIsolation
+        DispatchQueue.main.async { [weak self] in
+            self?.isVoiceIsolationActive = active
+        }
+    }
+
+    func openMicModePicker() {
+        AVCaptureDevice.showSystemUserInterface(.microphoneModes)
+    }
+}
+
+private final class MicModeObserver: NSObject {
+    private let onChange: () -> Void
+
+    init(onChange: @escaping () -> Void) {
+        self.onChange = onChange
+    }
+
+    override func observeValue(
+        forKeyPath keyPath: String?,
+        of object: Any?,
+        change: [NSKeyValueChangeKey: Any]?,
+        context: UnsafeMutableRawPointer?
+    ) {
+        onChange()
+    }
 }
